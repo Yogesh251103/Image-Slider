@@ -20,6 +20,8 @@ const SliderContainer = () => {
     <div style={containerStyles}>
       <Slider
         images={images}
+        slide={true}
+        vertical={true}
       />
     </div>
   );
