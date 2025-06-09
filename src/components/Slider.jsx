@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Slider = ({
   images,
-  autoplay = true,
+  autoplay = false,
   delay = 2000,
   dots = true,
   slide,
-  vertical
+  vertical,
 }) => {
   const [currIndex, setCurrIndex] = useState(0);
+  const [clickPosition, setClickPosition] = useState();
+  const imageRef = useRef();
 
   const slidesContainerStyles = {
     height: "100%",
@@ -21,18 +23,20 @@ const Slider = ({
   const slideStyles = {
     width: `${images.length * 100}%`,
     height: `${images.length * 100}%`,
-    transform: vertical ? `translateY(${-(100 / images.length) * currIndex}%)` : `translateX(${-(100 / images.length) * currIndex}%)`,
+    transform: vertical
+      ? `translateY(${-(100 / images.length) * currIndex}%)`
+      : `translateX(${-(100 / images.length) * currIndex}%)`,
     transition: slide && "transform 1s",
     display: "flex",
-    flexDirection : vertical ? "column" : "row"
+    flexDirection: vertical ? "column" : "row",
   };
 
   const imageStyles = {
     width: `${100 / images.length}%`,
     height: `${100 / images.length}%`,
-    backgroundSize:"cover",
-    backgroundPosition:"center",
-    backgroundRepeat : "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
   };
 
   const commonButtonStyles = {
@@ -98,8 +102,7 @@ const Slider = ({
         else setCurrIndex(currIndex - 1);
         break;
       case "next":
-        if (currIndex === images.length - 1) setCurrIndex(0);
-        else setCurrIndex(currIndex + 1);
+        setCurrIndex((currIndex + 1) % images.length);
         break;
     }
   };
@@ -108,13 +111,34 @@ const Slider = ({
     setCurrIndex(index);
   };
 
+  const handleMouseDown = (e) => {
+    setClickPosition(e.clientY);
+  };
+
+  window.addEventListener("mouseup", (e) => {
+    if (clickPosition == 0) return;
+    const dropPosition = e.clientY;
+    const rect = imageRef.current.getBoundingClientRect();
+    const height = rect.bottom - rect.top;
+    const percentage = ((clickPosition - dropPosition) / height) * 100;
+    console.log("clickPosition:",clickPosition,"dropPosition:",dropPosition,"height:",height,"percentage:",percentage)
+    if (percentage >= 40) {
+      setCurrIndex((currIndex + 1) % images.length);
+    }
+    setClickPosition(0);
+  });
+
   return (
     <div style={slidesContainerStyles}>
       <div style={slideStyles}>
-        {images.map((item) => (
-          <div style={{...imageStyles,backgroundImage:`url(${item})`}} key={item} draggable>
-
-          </div>
+        {images.map((item, index) => (
+          <div
+            ref={index === 0 ? imageRef : null}
+            style={{ ...imageStyles, backgroundImage: `url(${item})` }}
+            key={item}
+          
+            onMouseDown={handleMouseDown}
+          />
         ))}
       </div>
       <button
