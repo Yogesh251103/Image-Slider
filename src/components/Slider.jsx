@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from "react";
 
 const Slider = ({
   images,
-  autoplay = false,
+  autoplay = true,
   delay = 2000,
   dots = true,
   slide,
   vertical,
+  draggableSlides,
 }) => {
   const [currIndex, setCurrIndex] = useState(0);
-  const [clickPosition, setClickPosition] = useState();
+  const clickPositionRef = useRef(0);
   const imageRef = useRef();
 
   const slidesContainerStyles = {
@@ -86,14 +87,57 @@ const Slider = ({
   };
 
   useEffect(() => {
-    if (!autoplay) return;
+    if (autoplay) {
+      const timer = setTimeout(() => {
+        setCurrIndex((prev) => (prev + 1) % images.length);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [currIndex]);
 
-    const timer = setTimeout(() => {
-      setCurrIndex((prev) => (prev + 1) % images.length);
-    }, delay);
+  useEffect(() => {
+    const handleMouseUp = (e) => {
+      if (clickPositionRef.current === 0) return;
 
-    return () => clearTimeout(timer);
-  }, [currIndex, autoplay, delay, images.length]);
+      const dropPosition = vertical ? e.clientY : e.clientX;
+
+      if (imageRef.current) {
+        const rect = imageRef.current.getBoundingClientRect();
+        const height = rect.bottom - rect.top;
+        const width = rect.right - rect.left;
+        const divisor = vertical ? height : width;
+        const percentage = ((clickPositionRef.current - dropPosition) / divisor) * 100;
+
+        console.log(
+          "clickPosition:",
+          clickPositionRef.current,
+          "dropPosition:",
+          dropPosition,
+          "height/width:",
+          divisor,
+          "percentage:",
+          percentage
+        );
+
+        if (percentage >= 40) {
+          setCurrIndex((prev) => (prev + 1) % images.length);
+        }
+        if (percentage <= -40) {
+          if (currIndex === 0) {
+            setCurrIndex(images.length - 1);
+          } else {
+            setCurrIndex((prev) => prev - 1);
+          }
+        }
+      }
+
+      clickPositionRef.current = 0;
+    };
+
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, []);
 
   const handleSlideChange = (navigation) => {
     switch (navigation) {
@@ -112,21 +156,9 @@ const Slider = ({
   };
 
   const handleMouseDown = (e) => {
-    setClickPosition(e.clientY);
+    if (!draggableSlides) return;
+    clickPositionRef.current = vertical ? e.clientY : e.clientX;
   };
-
-  window.addEventListener("mouseup", (e) => {
-    if (clickPosition == 0) return;
-    const dropPosition = e.clientY;
-    const rect = imageRef.current.getBoundingClientRect();
-    const height = rect.bottom - rect.top;
-    const percentage = ((clickPosition - dropPosition) / height) * 100;
-    console.log("clickPosition:",clickPosition,"dropPosition:",dropPosition,"height:",height,"percentage:",percentage)
-    if (percentage >= 40) {
-      setCurrIndex((currIndex + 1) % images.length);
-    }
-    setClickPosition(0);
-  });
 
   return (
     <div style={slidesContainerStyles}>
@@ -136,7 +168,7 @@ const Slider = ({
             ref={index === 0 ? imageRef : null}
             style={{ ...imageStyles, backgroundImage: `url(${item})` }}
             key={item}
-          
+            onDragStart={(e) => e.preventDefault()}
             onMouseDown={handleMouseDown}
           />
         ))}
