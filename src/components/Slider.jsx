@@ -106,7 +106,8 @@ const Slider = ({
         const height = rect.bottom - rect.top;
         const width = rect.right - rect.left;
         const divisor = vertical ? height : width;
-        const percentage = ((clickPositionRef.current - dropPosition) / divisor) * 100;
+        const percentage =
+          ((clickPositionRef.current - dropPosition) / divisor) * 100;
 
         console.log(
           "clickPosition:",
@@ -123,11 +124,7 @@ const Slider = ({
           setCurrIndex((prev) => (prev + 1) % images.length);
         }
         if (percentage <= -40) {
-          if (currIndex === 0) {
-            setCurrIndex(images.length - 1);
-          } else {
-            setCurrIndex((prev) => prev - 1);
-          }
+          setCurrIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
         }
       }
 
@@ -142,11 +139,10 @@ const Slider = ({
   const handleSlideChange = (navigation) => {
     switch (navigation) {
       case "prev":
-        if (currIndex === 0) setCurrIndex(images.length - 1);
-        else setCurrIndex(currIndex - 1);
+        setCurrIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
         break;
       case "next":
-        setCurrIndex((currIndex + 1) % images.length);
+        setCurrIndex((prev) => (prev + 1) % images.length);
         break;
     }
   };
