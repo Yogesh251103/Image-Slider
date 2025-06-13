@@ -22,7 +22,7 @@ const SliderContainer = () => {
         images={images}
         slide={true}
         autoplay={false}
-        vertical={false}
+        vertical={true}
         draggableSlides={true}
       />
     </div>

@@ -10,8 +10,12 @@ const Slider = ({
   draggableSlides,
 }) => {
   const [currIndex, setCurrIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
   const clickPositionRef = useRef(0);
   const imageRef = useRef();
+  const dragRef = useRef(0);
+  const prevLeft = useRef(0);
 
   const slidesContainerStyles = {
     height: "100%",
@@ -25,9 +29,13 @@ const Slider = ({
     width: `${images.length * 100}%`,
     height: `${images.length * 100}%`,
     transform: vertical
-      ? `translateY(${-(100 / images.length) * currIndex}%)`
-      : `translateX(${-(100 / images.length) * currIndex}%)`,
-    transition: slide && "transform 1s",
+      ? `translateY(calc(${-(100 / images.length) * currIndex}% + ${
+          isDragging ? `${-dragRef.current}px` : "0px"
+        }))`
+      : `translateX(calc(${-(100 / images.length) * currIndex}% + ${
+          isDragging ? `${-dragRef.current}px` : "0px"
+        }))`,
+    transition: isDragging ? "none" : "transform 1s",
     display: "flex",
     flexDirection: vertical ? "column" : "row",
   };
@@ -129,11 +137,30 @@ const Slider = ({
       }
 
       clickPositionRef.current = 0;
+      dragRef.current = 0;
+      setIsDragging(false);
+    };
+
+    const handleMouseMove = (e) => {
+      if (!clickPositionRef.current) return;
+
+      const currentPosition = vertical ? e.clientY : e.clientX;
+      const offset = clickPositionRef.current - currentPosition;
+
+      if (Math.abs(offset) > 5) {
+        if (!isDragging) setIsDragging(true);
+        dragRef.current = offset;
+        setDragOffset(offset);
+      }
     };
 
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
 
-    return () => window.removeEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
   }, []);
 
   const handleSlideChange = (navigation) => {
@@ -153,12 +180,13 @@ const Slider = ({
 
   const handleMouseDown = (e) => {
     if (!draggableSlides) return;
+    setIsDragging(true);
     clickPositionRef.current = vertical ? e.clientY : e.clientX;
   };
 
   return (
     <div style={slidesContainerStyles}>
-      <div style={slideStyles}>
+      <div style={slideStyles} id="slide">
         {images.map((item, index) => (
           <div
             ref={index === 0 ? imageRef : null}
