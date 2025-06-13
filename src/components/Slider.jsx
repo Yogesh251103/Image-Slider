@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const Slider = ({
   images,
@@ -14,8 +14,6 @@ const Slider = ({
   const [dragOffset, setDragOffset] = useState(0);
   const clickPositionRef = useRef(0);
   const imageRef = useRef();
-  const dragRef = useRef(0);
-  const prevLeft = useRef(0);
 
   const slidesContainerStyles = {
     height: "100%",
@@ -30,10 +28,10 @@ const Slider = ({
     height: `${images.length * 100}%`,
     transform: vertical
       ? `translateY(calc(${-(100 / images.length) * currIndex}% + ${
-          isDragging ? `${-dragRef.current}px` : "0px"
+          isDragging ? `${-dragOffset}px` : "0px"
         }))`
       : `translateX(calc(${-(100 / images.length) * currIndex}% + ${
-          isDragging ? `${-dragRef.current}px` : "0px"
+          isDragging ? `${-dragOffset}px` : "0px"
         }))`,
     transition: isDragging ? "none" : "transform 1s",
     display: "flex",
@@ -94,6 +92,7 @@ const Slider = ({
     cursor: "pointer",
   };
 
+  console.log(isDragging);
   useEffect(() => {
     if (autoplay) {
       const timer = setTimeout(() => {
@@ -103,65 +102,67 @@ const Slider = ({
     }
   }, [currIndex]);
 
-  useEffect(() => {
-    const handleMouseUp = (e) => {
-      if (clickPositionRef.current === 0) return;
+  const handleMouseUp = useCallback((e) => {
+    if (clickPositionRef.current === 0) return;
+    const dropPosition = vertical ? e.clientY : e.clientX;
 
-      const dropPosition = vertical ? e.clientY : e.clientX;
+    if (imageRef.current) {
+      const rect = imageRef.current.getBoundingClientRect();
+      const height = rect.bottom - rect.top;
+      const width = rect.right - rect.left;
+      const divisor = vertical ? height : width;
+      const percentage =
+        ((clickPositionRef.current - dropPosition) / divisor) * 100;
 
-      if (imageRef.current) {
-        const rect = imageRef.current.getBoundingClientRect();
-        const height = rect.bottom - rect.top;
-        const width = rect.right - rect.left;
-        const divisor = vertical ? height : width;
-        const percentage =
-          ((clickPositionRef.current - dropPosition) / divisor) * 100;
+      console.log(
+        "clickPosition:",
+        clickPositionRef.current,
+        "dropPosition:",
+        dropPosition,
+        "height/width:",
+        divisor,
+        "percentage:",
+        percentage
+      );
 
-        console.log(
-          "clickPosition:",
-          clickPositionRef.current,
-          "dropPosition:",
-          dropPosition,
-          "height/width:",
-          divisor,
-          "percentage:",
-          percentage
-        );
-
-        if (percentage >= 40) {
-          setCurrIndex((prev) => (prev + 1) % images.length);
-        }
-        if (percentage <= -40) {
-          setCurrIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-        }
+      if (percentage >= 40) {
+        setCurrIndex((prev) => (prev + 1) % images.length);
       }
+      if (percentage <= -40) {
+        setCurrIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+      }
+    }
 
-      clickPositionRef.current = 0;
-      dragRef.current = 0;
-      setIsDragging(false);
-    };
+    clickPositionRef.current = 0;
+    setDragOffset(0);
+    setIsDragging(false);
+  }, []);
 
-    const handleMouseMove = (e) => {
-      if (!clickPositionRef.current) return;
+  const handleMouseMove = useCallback(
+    (e) => {
+      console.log(isDragging);
+      if (!clickPositionRef.current || !isDragging) return;
 
       const currentPosition = vertical ? e.clientY : e.clientX;
       const offset = clickPositionRef.current - currentPosition;
 
       if (Math.abs(offset) > 5) {
         if (!isDragging) setIsDragging(true);
-        dragRef.current = offset;
         setDragOffset(offset);
       }
-    };
+    },
+    [isDragging]
+  );
 
+  useEffect(() => {
     window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, [handleMouseUp]);
 
-    return () => {
-      window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [handleMouseMove]);
 
   const handleSlideChange = (navigation) => {
     switch (navigation) {

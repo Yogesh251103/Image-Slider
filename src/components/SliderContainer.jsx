@@ -13,9 +13,6 @@ const SliderContainer = () => {
     "https://imgs.search.brave.com/1RRxscJgVDfvV0JTdrKjhN-ABwBkOtHUw7yZHrsKiSU/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTcw/NDYyODU2L3Bob3Rv/L2RvZy13b3JraW5n/LWNvbWZvcnRhYmx5/LWZyb20taG9tZS5q/cGc_cz02MTJ4NjEy/Jnc9MCZrPTIwJmM9/YmtXVTgzWGN2VmR4/UUJ2UW1vcVZOa00t/ekxac0d5NEJaUFdX/UVFxek1vaz0",
   ];
 
-  const button = (
-    <button style={{ padding: "10px", fontSize: "1rem" }}>{"<"}</button>
-  );
   return (
     <div style={containerStyles}>
       <Slider
